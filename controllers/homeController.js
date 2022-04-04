@@ -3,12 +3,12 @@ const records = require('../services/mongoClientService').db('WeightConversion')
 
 const router = new Router();
 
-router.get("/", async (ctx) => {
+router.get("/api", async (ctx) => {
     ctx.body = "Hello world";
 });
 
 
-router.get("/weights", async (ctx) => {
+router.get("/api/weights", async (ctx) => {
     const weights = await records.find();
     ctx.body = await weights.toArray();
 });
