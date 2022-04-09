@@ -1,49 +1,37 @@
-const Router = require("Koa-router");
-const Users = require("../services/mongoClientService").db("WeightConversion").collection("Users");
-const userService = require("../services/userService");
-const bcrypt = require("bcrypt");
+const Router = require("koa-router");
+const { registerUser, getUsers, getUserByUsername, loginUser } = require("../services/userService");
 
 const router = new Router();
 
 router.post("/api/users/register", async (ctx) => {
-    const body = ctx.request.body;
-    const user = await Users.findOne({username: body.username});
-    if (user) {
-        ctx.status = 400;
-        ctx.body = {
-            message: "Username already exists"
-        };
-    } else {
-        await bcrypt.hash(body.password, 10, async (hashErr, hash) => {
-            if (hashErr) {
-                ctx.status = 403;
-                return ctx.throw(403, hashErr.toString());
-            }
-            try {
-                await Users.insertOne({
-                    ...body,
-                    password: hash
-                });
-                ctx.status = 201;
-                ctx.body = "";
-            } catch (e) {
-                ctx.status = 403;
-                ctx.throw(403, e.toString());
-            }
-        });
-
+  const body = ctx.request.body;
+  const user = await getUserByUsername(body.username);
+  if (user) {
+    ctx.status = 400;
+    ctx.body = {
+      message: "Username already exists"
+    };
+  } else {
+    try {
+      await registerUser(body);
+      ctx.status = 201;
+      return ctx.body = '';
+    } catch (err) {
+      ctx.status = 403;
+      return ctx.throw(403, e);
     }
+  }
+});
 
-
-    // await db.collection("Users").insertOne({
-    //     ...user,
-    //     password: hashedPassword
-    // });
+router.post('/api/users/login', async (ctx) => {
+  const body = ctx.request.body;
+  const result = await loginUser(body.username, body.password);
+  ctx.status = result.code;
+  ctx.body = result.message;
 });
 
 router.get("/api/users", async (ctx) => {
-    const users = await db.collection("Users").find();
-    ctx.body = await users.toArray();
+  ctx.body = await getUsers();
 });
 
 module.exports = router;
